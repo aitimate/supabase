@@ -49,7 +49,7 @@ services:
 
   kong:
     container_name: supabase-kong
-    image: kong:2.8.1
+    image: kong:2.8.5
     restart: unless-stopped
     # https://unix.stackexchange.com/a/294837
     entrypoint: bash -c 'eval "echo \"$$(cat ~/temp.yml)\"" > ~/kong.yml && /docker-entrypoint.sh kong docker-start'
@@ -79,9 +79,9 @@ services:
     container_name: supabase-auth
     image: supabase/gotrue:v2.158.1
     depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
+      # db:
+      #   # Disable this if you are using an external Postgres database
+      #   condition: service_healthy
       analytics:
         condition: service_healthy
     healthcheck:
@@ -152,9 +152,9 @@ services:
     container_name: supabase-rest
     image: postgrest/postgrest:v12.2.0
     depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
+      # db:
+      #   # Disable this if you are using an external Postgres database
+      #   condition: service_healthy
       analytics:
         condition: service_healthy
     restart: unless-stopped
@@ -173,9 +173,9 @@ services:
     container_name: realtime-dev.supabase-realtime
     image: supabase/realtime:v2.30.34
     depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
+      # db:
+      #   # Disable this if you are using an external Postgres database
+      #   condition: service_healthy
       analytics:
         condition: service_healthy
     healthcheck:
@@ -217,9 +217,9 @@ services:
     container_name: supabase-storage
     image: supabase/storage-api:v1.10.1
     depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
+      # db:
+      #   # Disable this if you are using an external Postgres database
+      #   condition: service_healthy
       rest:
         condition: service_started
       imgproxy:
@@ -276,9 +276,9 @@ services:
     container_name: supabase-meta
     image: supabase/postgres-meta:v0.83.2
     depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
+      # db:
+      #   # Disable this if you are using an external Postgres database
+      #   condition: service_healthy
       analytics:
         condition: service_healthy
     restart: unless-stopped
@@ -321,10 +321,10 @@ services:
       interval: 5s
       retries: 10
     restart: unless-stopped
-    depends_on:
-      db:
-        # Disable this if you are using an external Postgres database
-        condition: service_healthy
+    # depends_on:
+    #   db:
+    #     # Disable this if you are using an external Postgres database
+    #     condition: service_healthy
     # Uncomment to use Big Query backend for analytics
     # volumes:
     #   - type: bind
@@ -354,52 +354,52 @@ services:
     ports:
       - 4000:4000
 
-  # Comment out everything below this point if you are using an external Postgres database
-  db:
-    container_name: supabase-db
-    image: supabase/postgres:15.1.1.78
-    healthcheck:
-      test: pg_isready -U postgres -h localhost
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    depends_on:
-      vector:
-        condition: service_healthy
-    command:
-      - postgres
-      - -c
-      - config_file=/etc/postgresql/postgresql.conf
-      - -c
-      - log_min_messages=fatal # prevents Realtime polling queries from appearing in logs
-    restart: unless-stopped
-    ports:
-      # Pass down internal port because it's set dynamically by other services
-      - ${POSTGRES_PORT}:${POSTGRES_PORT}
-    environment:
-      POSTGRES_HOST: /var/run/postgresql
-      PGPORT: ${POSTGRES_PORT}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      PGDATABASE: ${POSTGRES_DB}
-      POSTGRES_DB: ${POSTGRES_DB}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXP: ${JWT_EXPIRY}
-    volumes:
-      - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
-      # Must be superuser to create event trigger
-      - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
-      # Must be superuser to alter reserved role
-      - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
-      # Initialize the database settings with JWT_SECRET and JWT_EXP
-      - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
-      # PGDATA directory is persisted between restarts
-      - ./volumes/db/data:/var/lib/postgresql/data:Z
-      # Changes required for Analytics support
-      - ./volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
-      # Use named volume to persist pgsodium decryption key between restarts
-      - db-config:/etc/postgresql-custom
+#  # Comment out everything below this point if you are using an external Postgres database
+#  db:
+#    container_name: supabase-db
+#    image: supabase/postgres:15.1.1.78
+#    healthcheck:
+#      test: pg_isready -U postgres -h localhost
+#      interval: 5s
+#      timeout: 5s
+#      retries: 10
+#    depends_on:
+#      vector:
+#        condition: service_healthy
+#    command:
+#      - postgres
+#      - -c
+#      - config_file=/etc/postgresql/postgresql.conf
+#      - -c
+#      - log_min_messages=fatal # prevents Realtime polling queries from appearing in logs
+#    restart: unless-stopped
+#    ports:
+#      # Pass down internal port because it's set dynamically by other services
+#      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+#    environment:
+#      POSTGRES_HOST: /var/run/postgresql
+#      PGPORT: ${POSTGRES_PORT}
+#      POSTGRES_PORT: ${POSTGRES_PORT}
+#      PGPASSWORD: ${POSTGRES_PASSWORD}
+#      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#      PGDATABASE: ${POSTGRES_DB}
+#      POSTGRES_DB: ${POSTGRES_DB}
+#      JWT_SECRET: ${JWT_SECRET}
+#      JWT_EXP: ${JWT_EXPIRY}
+#    volumes:
+#      - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
+#      # Must be superuser to create event trigger
+#      - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
+#      # Must be superuser to alter reserved role
+#      - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
+#      # Initialize the database settings with JWT_SECRET and JWT_EXP
+#      - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+#      # PGDATA directory is persisted between restarts
+#      - ./volumes/db/data:/var/lib/postgresql/data:Z
+#      # Changes required for Analytics support
+#      - ./volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
+#      # Use named volume to persist pgsodium decryption key between restarts
+#      - db-config:/etc/postgresql-custom
 
   vector:
     container_name: supabase-vector
@@ -427,3 +427,4 @@ services:
 
 volumes:
   db-config:
+

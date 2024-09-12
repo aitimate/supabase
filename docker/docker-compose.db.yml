@@ -1,0 +1,45 @@
+name: supabase-db
+version: "3.8"
+
+services:
+  db:
+    image: supabase/postgres:15.6.1.120
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - log_min_messages=fatal # prevents Realtime polling queries from appearing in logs
+    restart: unless-stopped
+    ports:
+      # Pass down internal port because it's set dynamically by other services
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGPORT: ${POSTGRES_PORT}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      POSTGRES_DB: ${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: ${JWT_EXPIRY}
+    volumes:
+      - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
+      # Must be superuser to create event trigger
+      - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
+      # Must be superuser to alter reserved role
+      - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
+      # Initialize the database settings with JWT_SECRET and JWT_EXP
+      - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+      # PGDATA directory is persisted between restarts
+      # - ./volumes/db/data:/var/lib/postgresql/data:Z
+      # Always use a fresh database when developing
+      - /var/lib/postgresql/data
+      # Changes required for Analytics support
+      - ./volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
+      - db-config:/etc/postgresql-custom
+
+volumes:
+  db-config:
